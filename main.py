@@ -13,20 +13,20 @@ from BugWorld import *
 #main control loop of the pygame
 class BugSim( PygameHelper ):
 	
-	def __init__(Self):
-		Self.BW = BugWorld() #instantiate the world and its objects
-		super(BugSim,Self).__init__( (Self.BW.BOUNDARY_WIDTH, Self.BW.BOUNDARY_HEIGHT), Color.WHITE )
+	def __init__(self):
+		self.BW = BugWorld() #instantiate the world and its objects
+		super(BugSim,self).__init__( (self.BW.BOUNDARY_WIDTH, self.BW.BOUNDARY_HEIGHT), Color.WHITE )
 
-	def update(Self): #update everything in the world
-		Self.BW.update()
+	def update(self): #update everything in the world
+		self.BW.update()
 
 
-	def draw( Self ): #draw the resulting world
-		Self.screen.fill(Color.WHITE)
-		Self.BW.draw(Self.screen)
+	def draw( self ): #draw the resulting world
+		self.screen.fill(Color.WHITE)
+		self.BW.draw(self.screen)
 		pygame.display.update()
 
-	def keyDown(Self, key):
+	def keyDown(self, key):
 		
 		if key == K_SPACE:
 			pass

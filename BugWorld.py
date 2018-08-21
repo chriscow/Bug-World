@@ -1,91 +1,4 @@
-
-#PGBugWorld where pygame dependent code goes
-#contains draw code
-#toggle display of light, smell, sound
-
-#----------------- START PYGAME SPECIFIC CODE ---------------------------------------
 import pygame
-
-#assume 2D graphics and using Pygame to render.
-class PGObject():
-
-	def draw( Self, surface ):
-		x = int(Self.get_abs_x())
-		y = int(Self.get_abs_y())
-
-
-		r,g,b = Self.color #unpack the tuple
-#modulate color based on health
-		# hp = Self.health/100 #what is the healt percentage
-		# r *= hp
-		# g *= hp
-		# b *= hp
-
-		pygame.draw.circle(surface, (int(r),int(g),int(b)), (x, y), Self.size, 0) 
-	
-	def get_abs_x():
-		pass
-
-	def get_abs_y():
-		pass
-
-#world for simulations to happen 
-#has boundaries
-#has objects
-#	- determines which type
-#	- determines where and when
-#	- kills objects
-#	- determines rules for affecting object attributes (health, mutating, mating)
-
-
-#objects register for different types of collisions (physical, sound, smell, light(RGB))
-#objects have hitboxes for each sensor.
-
-
-#objects emit light at 1/r^2 three different colors
-#how do you keep senses from sensing itself
-#objects emit sound (varies on speed)
-#objects emit smell
-#objects have physical collision
-#objects have smell collision
-#objects have sound collision
-#eyes collide with objects and extracts RGB values from the target object .color tuple
-#eye collision also gives distance
-#bodies collide with other solid bodies
-
-# has the sample time which is the update loop time...used for velocity and accleration
-
-#detects collisions
-#	- different hitbox shapes.  Hitbox needed for eyes so that collisions can be detected
-#		in field of vision (use circles to start for everything.  Could use cones for vision eventually)
-#	- should return "distance" so can be used for intensity
-#	- returns an intensity of collision (for eye interaction with light, sound, smell)
-
-
-#contains rules of interactions
-#how do bugs die
-#have a score that indicates successfulness (distance travelled, area covered, energy amount (expended moving, gained eating) )
-#how do bugs reproduce (should we use the "weakest 500" to avoid extinction events)
-
-#need global counters so can do rates to keep populations stable.
-#timer
-	#controls rates like food introduction, mating
-	#creates extinction events
-
-#Iterations/generations/epoch:
-	#can be used to create extinction events in so many cycles
-
-#Need a point system to keep track of goal reinforcement
-	#points for distance travelled (would incent to move.  otherwise would just sit still to max energy/health)
-	#points for time alive
-	#points for food eaten
-	#could use energy and health
-
-#Need an energy system
-	#controls whether starves
-	#consume energy based on speed
-	#speed driven by amount of energy
-
 import numpy as np
 import random
 
@@ -95,6 +8,9 @@ import random
 #Positive rotation follow RHR, x-axis into the y-axis...so z is up.
 import transforms3d.affines as AFF 
 import transforms3d.euler as E
+
+from pgobject import *
+
 
 #Color class so can separate out code from PG specific stuff.
 #http://www.discoveryplayground.com/computer-programming-for-kids/rgb-colors/
@@ -218,13 +134,13 @@ class BWCollision_Dict():	#Dictionary: two types as the keys, function as the it
 
 		}
 
-	def handle_collision( Self, OB1, OB2):
-		if (OB1.type > OB2.type ): Self.handle_dict(OB2, OB1) #order the keys for dict lookup
-		else: Self.handle_dict(OB1, OB2)
+	def handle_collision( self, OB1, OB2):
+		if (OB1.type > OB2.type ): self.handle_dict(OB2, OB1) #order the keys for dict lookup
+		else: self.handle_dict(OB1, OB2)
 
-	def handle_dict( Self, OB1, OB2 ):
+	def handle_dict( self, OB1, OB2 ):
 		try:
-			Self.CollisionDict[(OB1.type,OB2.type)]( OB1, OB2 ) #use types to lookup function to call and then call it
+			self.CollisionDict[(OB1.type,OB2.type)]( OB1, OB2 ) #use types to lookup function to call and then call it
 		except KeyError:
 			pass #ignore it if isn't in dictionary
 
@@ -263,97 +179,97 @@ class BugWorld(): #defines the world, holds the objects, defines the rules of in
 	#SoundDetectingObjects
 
 #--- Instance Methods	
-	def __init__(Self):
-		Self.rel_position = BugWorld.IDENTITY #sets the world as the root equates to x=0, y=0, z=0, rotation = 0
+	def __init__(self):
+		self.rel_position = BugWorld.IDENTITY #sets the world as the root equates to x=0, y=0, z=0, rotation = 0
 		for i in range(0, BugWorld.NUM_HERBIVORE_BUGS): #instantiate all of the Herbivores with a default name
 			start_pos = BugWorld.get_random_location_in_world()
-			Self.WorldObjects.append( Herbivore( start_pos, "H"+ str(i) ))
+			self.WorldObjects.append( Herbivore( start_pos, "H"+ str(i) ))
 
 		for i in range(0, BugWorld.NUM_CARNIVORE_BUGS):
 			start_pos = BugWorld.get_random_location_in_world()
-			Self.WorldObjects.append( Carnivore( start_pos, "C"+ str(i) ))
+			self.WorldObjects.append( Carnivore( start_pos, "C"+ str(i) ))
 
 		for i in range(0, BugWorld.NUM_OMNIVORE_BUGS ):
  			start_pos = BugWorld.get_random_location_in_world()
- 			Self.WorldObjects.append( Omnivore( start_pos, "O"+ str(i) ))
+ 			self.WorldObjects.append( Omnivore( start_pos, "O"+ str(i) ))
 
 		for i in range(0, BugWorld.NUM_OBSTACLES ):
  			start_pos = BugWorld.get_random_location_in_world()
- 			Self.WorldObjects.append( Obstacle( start_pos, "B"+ str(i) ))
+ 			self.WorldObjects.append( Obstacle( start_pos, "B"+ str(i) ))
 
 		for i in range(0, BugWorld.NUM_PLANT_FOOD ):
  			start_pos = BugWorld.get_random_location_in_world()
- 			Self.WorldObjects.append( Plant( start_pos, "P"+ str(i) ))
+ 			self.WorldObjects.append( Plant( start_pos, "P"+ str(i) ))
 
 		for i in range(0, BugWorld.NUM_MEAT_FOOD ):
  			start_pos = BugWorld.get_random_location_in_world()
- 			Self.WorldObjects.append( Meat( start_pos, "M"+ str(i) ))
+ 			self.WorldObjects.append( Meat( start_pos, "M"+ str(i) ))
 
-	def update(Self):
-		for BWO in Self.WorldObjects:
-			BWO.update(Self.rel_position)
+	def update(self):
+		for BWO in self.WorldObjects:
+			BWO.update(self.rel_position)
 
-		Self.detect_collisions()
-		Self.post_collision_processing()
+		self.detect_collisions()
+		self.post_collision_processing()
 
-	def draw( Self, surface ):
-		for BWO in Self.WorldObjects:
+	def draw( self, surface ):
+		for BWO in self.WorldObjects:
 			BWO.draw( surface )
 	
-	def detect_collisions( Self ):
-		Self.detect_light_collisions()
-		Self.detect_physical_collisions()
+	def detect_collisions( self ):
+		self.detect_light_collisions()
+		self.detect_physical_collisions()
 
 		#detect odor collisions
 		#detect sound collisions
 
-	def post_collision_processing ( Self ):
+	def post_collision_processing ( self ):
 		#loop through objects and delete them, convert them etc.
 		#if health < 0, delete.
 		#if was a bug, convert it to meat
 		#if it was a plant, just delete it
 
 		#need to keep track of where in list when deleting so that when an item is deleted, the range is shortened.
-		list_len = len( Self.WorldObjects ) #starting lenght of the list of objects
+		list_len = len( self.WorldObjects ) #starting lenght of the list of objects
 		i = 0 #index as to where we are in the list
 
 		#loop through every object in the list
 		while ( i < list_len ):
-			if ( Self.WorldObjects[i].health <= 0 ): #if the objects health is gone, deal with it.
-				co = Self.WorldObjects[i] #get the current object
+			if ( self.WorldObjects[i].health <= 0 ): #if the objects health is gone, deal with it.
+				co = self.WorldObjects[i] #get the current object
 
 				#if it is a bug, then convert it to meat
 				if( co.type in { BWOType.HERB, BWOType.OMN, BWOType.CARN } ):
 			   		start_pos = co.get_abs_position() #get location of the dead bug
-			   		Self.WorldObjects.append( Meat( start_pos, "M"+ str(i) )) #create a meat object at same location
+			   		self.WorldObjects.append( Meat( start_pos, "M"+ str(i) )) #create a meat object at same location
 			   		#list length hasn't changed because we are going to delete and add one
 				else:
 					list_len -= 1	#reduce the length of the list 
 
-				del Self.WorldObjects[i] #get rid of the object
+				del self.WorldObjects[i] #get rid of the object
 				#'i' should now point to the next one in the list because an item was removed so shouldn't have to increment
 			else:
 				i += 1 #manually increment index pointer because didn't delete the object
 
 
-	def detect_light_collisions( Self ):
+	def detect_light_collisions( self ):
 		#loop through light emitting objects and see if they collide with light detecting
 		#make sure doesn't collide with self
 		#need to differientiate between RGB detection/emission
 		#need to differentiate intensities so objects further away stimulate less
 		pass
 
-	def detect_physical_collisions( Self ):
+	def detect_physical_collisions( self ):
 		#loop through solid bodies
 		#call collision handlers on each object
-		for BWO1 in Self.WorldObjects:
-			for BWO2 in Self.WorldObjects:
+		for BWO1 in self.WorldObjects:
+			for BWO2 in self.WorldObjects:
 				if BWO1 == BWO2: continue
-				elif Self.circle_collision(BWO1, BWO2):
+				elif self.circle_collision(BWO1, BWO2):
 					# print("Hit " + BWO1.name + " and " + BWO2.name )
-					Self.BWD.handle_collision(BWO1, BWO2)
+					self.BWD.handle_collision(BWO1, BWO2)
 
-	def circle_collision( Self, BWO1, BWO2 ):	#takes two BugWorld Objects in.
+	def circle_collision( self, BWO1, BWO2 ):	#takes two BugWorld Objects in.
 		dx = BWO1.abs_position[0][3] - BWO2.abs_position[0][3]
 		dy = BWO1.abs_position[1][3] - BWO2.abs_position[1][3]
 
@@ -414,37 +330,40 @@ class BWObject( PGObject ): #Bug World Object
 	#BWO's should have a draw method that includes itself, hitboxes (based on global var)
 	#stub methods for what collisions to register for
 
-	def __init__(Self, starting_pos = BugWorld.IDENTITY, name = "BWOBject"):
-		Self.rel_position = starting_pos
-		Self.abs_position = starting_pos
-		Self.name = name
-		Self.size = 1 #default...needs to be overridden
-		Self.color = Color.BLACK #default...needs to be overridden
-		Self.type = BWOType.OBJ #default...needs to be overridden
-		Self.health = 100 #default...needs to be overridden
+	def __init__(self, parent, starting_pos = BugWorld.IDENTITY, name = "BWOBject"):
+
+		self.parent = parent
+		self.rel_position = starting_pos
+		self.abs_position = starting_pos
+		self.name = name
+		self.size = 1 				#default...needs to be overridden
+		self.color = Color.BLACK	#default...needs to be overridden
+		self.alpha = 255
+		self.type = BWOType.OBJ		#default...needs to be overridden
+		self.health = 100			#default...needs to be overridden
 
 
-	def __repr__(Self):
-  		return ( Self.name + ": abs position={}".format(Self.abs_position) ) #print its name and transform
+	def __repr__(self):
+  		return ( self.name + ": abs position={}".format(self.abs_position) ) #print its name and transform
 
-	def set_rel_position(Self, pos_transform = BugWorld.IDENTITY): # position relative to its container
-		Self.rel_position = BugWorld.adjust_for_boundary( pos_transform ) #class method handles boundary adjustment
-		return Self.rel_position			
+	def set_rel_position(self, pos_transform = BugWorld.IDENTITY): # position relative to its container
+		self.rel_position = BugWorld.adjust_for_boundary( pos_transform ) #class method handles boundary adjustment
+		return self.rel_position			
 
-	def set_abs_position(Self, base_transform = BugWorld.IDENTITY):
-		Self.abs_position = np.matmul( base_transform, Self.rel_position )
-		return Self.abs_position
+	def set_abs_position(self, base_transform = BugWorld.IDENTITY):
+		self.abs_position = np.matmul( base_transform, self.rel_position )
+		return self.abs_position
 
-	def get_abs_position(Self):
-		return Self.abs_position
+	def get_abs_position(self):
+		return self.abs_position
 
-	def get_abs_x( Self ):
-		return( BugWorld.get_x( Self.abs_position ) )
+	def get_abs_x( self ):
+		return( BugWorld.get_x( self.abs_position ) )
 
-	def get_abs_y( Self ):
-		return( BugWorld.get_y( Self.abs_position ) )
+	def get_abs_y( self ):
+		return( BugWorld.get_y( self.abs_position ) )
 
-	def update( Self, base ): #stub method. Override to move this object each sample period
+	def update( self, base ): #stub method. Override to move this object each sample period
 		pass	
 
 
@@ -477,94 +396,158 @@ class BWObject( PGObject ): #Bug World Object
 #knows how to draw itself
 #knows what type of collisions to register for
 
+class BugSense( BWObject ):
+	"""
+	Base class for bug senses.  Senses take input from the world and fire events
+	via callbacks.
+	"""
 
-class BugEye( BWObject ):
-	def __init__( Self, pos_transform = BugWorld.IDENTITY, size = 1 ):
-		Self.name = "E"
-		super().__init__( pos_transform, Self.name )
-		Self.size = size
-		Self.color = Color.GREY 
+	def __init__(self, parent, pos, name, range, acuity, visible=True, alpha=128):
+    	
+		super().__init__(parent, pos, name)
+		self.color = Color.GREY
 
-	def update( Self, base ):
-		#eyes don't move independent of bug, so relative pos won't change.
-		Self.set_abs_position( base ) #update it based on the passed in ref frame
+		assert(acuity <= range) # acuity must be less than range
+		self.range = range			# How far can anything be detected (corner of your eye)
+		self.acuity = acuity		# How far is detection enhanced (center of eye)
+
+		# Determines if the range and acuity is drawn for debugging
+		self.visible = visible	
+		self.alpha = alpha
+
+	def draw(self, surface):
+
+		# If the sense itself is visible, draw it transparently
+		# TODO: This is just mostly copied from PGObject::draw() -- need to refactor
+		if self.visible:
+			x = int(self.get_abs_x())
+			y = int(self.get_abs_y())
+			r,g,b = self.color
+			surface2 = pygame.Surface((self.range,self.range))
+			surface2.set_colorkey((0,0,0))
+			surface2.set_alpha(self.alpha)
+			pygame.draw.circle(surface2, (int(r), int(g), int(b)), (0,0), self.range)
+			surface.blit(surface2, (x,y))
+		
+		# Now draw the physical representation of the sensory object on top
+		super().draw(surface)
+
+	def detect( self ):
+		pass
+
+class BugEye( BugSense ):
+	"""
+	Physical representation of an eye
+	"""
+	def __init__(self, parent, pos, name, size, range=100, acuity=3):
+		super().__init__(parent, pos, name, range, acuity)
+		self.size = size
+		self.color = Color.GREY
+	
+	def draw(self, surface):
+		super().draw(surface)
+
+	def detect(self):
+		super().detect()
+		
+	def move( self, base ):
+		self.set_abs_position( base )
+		super().update(base)
 
 class Bug ( BWObject ):
 
 	DEFAULT_TURN_AMT = np.deg2rad(30) # turns are in radians
 	DEFAULT_MOVE_AMT = 5
 
-	def __init__( Self, initial_pos, name = "Bug" ):
-		super().__init__( initial_pos, name )
-		Self.size = 10 #override default and set the intial radius of bug
-		Self.color = Color.PINK #override default and set the initial color of a default bug
-		Self.energy = 100 #default...needs to be overridden
-		Self.score = 0 #used to reinforce behaviour.  Add to the score when does a "good" thing
+	def __init__( self, initial_pos, name = "Bug" ):
+		super().__init__( None, initial_pos, name )
+		self.size = 10 #override default and set the intial radius of bug
+		self.color = Color.PINK #override default and set the initial color of a default bug
+		self.energy = 100 #default...needs to be overridden
+		self.score = 0 #used to reinforce behaviour.  Add to the score when does a "good" thing
+
+		self.senses = []
 
 		#add the eyes for a default bug
 		#put eye center on circumference, rotate then translate.
+
 		rT = BugWorld.get_pos_transform( 0, 0, 0, np.deg2rad(-30) )
-		tT = BugWorld.get_pos_transform( Self.size, 0, 0, 0 )
-		Self.RIGHT_EYE_LOC = np.matmul(rT,tT)
+		tT = BugWorld.get_pos_transform( self.size, 0, 0, 0 )
+		self.RIGHT_EYE_LOC = np.matmul(rT,tT)
 
 		rT = BugWorld.get_pos_transform( 0, 0, 0, np.deg2rad(30) )
-		Self.LEFT_EYE_LOC = np.matmul(rT,tT)
+		self.LEFT_EYE_LOC = np.matmul(rT,tT)
 
-		Self.EYE_SIZE = int(Self.size * 0.50) #set a percentage the size of the bug
+		self.EYE_SIZE = int(self.size * 0.50) #set a percentage the size of the bug
+		
 		#instantiate the eyes
-		Self.RightEye = BugEye( Self.RIGHT_EYE_LOC, Self.EYE_SIZE )
-#		Self.RightEye.color = Color.RED
+		# parent, name, pos, size, range=10, acuity=3
+		self.senses.append( BugEye(self, self.RIGHT_EYE_LOC, 'left eye', self.EYE_SIZE, range=10*self.size, acuity=3*self.size) )
+		self.senses.append( BugEye(self, self.LEFT_EYE_LOC, 'right eye', self.EYE_SIZE, range=10*self.size, acuity=3*self.size) )
 
-		Self.LeftEye = BugEye( Self.LEFT_EYE_LOC, Self.EYE_SIZE )
+	def detect(self):
+		#
+		# Detect threats and obsticles within field of sensory range
+		#
+		for sense in self.senses:
+			sense.detect()
 
+	def think(self):
+		# 
+		# Do something with information from senses
+		#
+		pass
 
-	def update( Self, base ):
-#		Self.wander() #changes the relative position
-#		Self.move_forward( 1 )
-		Self.kinematic_wander()
-		Self.set_abs_position( base )
-		Self.RightEye.update( Self.abs_position )
-		Self.LeftEye.update( Self.abs_position )
+	def move(self, base):
+		self.kinematic_wander()
+		self.set_abs_position( base )	
+		for sense in self.senses:
+			sense.move(self.abs_position)
 
-	def draw( Self, surface ):
+	def update( self, base ):
+		self.detect()
+		self.think()
+		self.move(base)
+
+	def draw( self, surface ):
 		super().draw(surface) #inherited from BWObject
-		Self.RightEye.draw(surface)
-		Self.LeftEye.draw(surface)
+		for sense in self.senses:
+			sense.draw(surface)
 
-	def move_forward( Self, amount_to_move = DEFAULT_MOVE_AMT ):
+	def move_forward( self, amount_to_move = DEFAULT_MOVE_AMT ):
 		#assume bug's 'forward' is along the x direction in local coord frame
 		tM = BugWorld.get_pos_transform( x=amount_to_move, y=0, z=0, theta=0 ) #create an incremental translation
-		Self.set_rel_position ( np.matmul(Self.rel_position, tM)) #update the new position
+		self.set_rel_position ( np.matmul(self.rel_position, tM)) #update the new position
 
-	def turn_left( Self, theta = DEFAULT_TURN_AMT ):
+	def turn_left( self, theta = DEFAULT_TURN_AMT ):
 		rM = BugWorld.get_pos_transform( x=0, y=0, z=0, theta=theta ) #create an incremental rotation
-		Self.set_rel_position (np.matmul(Self.rel_position, rM )) #update the new position
+		self.set_rel_position (np.matmul(self.rel_position, rM )) #update the new position
 
-	def turn_right( Self, theta  = DEFAULT_TURN_AMT ):
+	def turn_right( self, theta  = DEFAULT_TURN_AMT ):
 		#'turning right is just a negative angle passed to turn left'
-		Self.turn_left( -theta )
+		self.turn_left( -theta )
 
-	def wander( Self ):
+	def wander( self ):
 		rand_x = random.randint( 0, Bug.DEFAULT_MOVE_AMT )
 		rand_theta = random.uniform( -Bug.DEFAULT_TURN_AMT, Bug.DEFAULT_TURN_AMT )
 		wM = BugWorld.get_pos_transform( x=rand_x, y=0, z=0, theta=rand_theta ) #create an incremental movement
-		Self.set_rel_position(np.matmul(Self.rel_position, wM )) #update the new relative position
+		self.set_rel_position(np.matmul(self.rel_position, wM )) #update the new relative position
 
-	def kinematic_wander(Self):
+	def kinematic_wander(self):
 
 		rand_vr = random.uniform( -.5, 1 ) #random right wheel velocity normalized
 		rand_vl = random.uniform( -.5, 1 ) #biased to move forward though
 										   #eventually will be driven by a neuron
 
-		delta_x, delta_y, delta_theta = Self.kinematic_move( rand_vr, rand_vl )
+		delta_x, delta_y, delta_theta = self.kinematic_move( rand_vr, rand_vl )
 		wM = BugWorld.get_pos_transform( x=delta_x, y=delta_y, z=0, theta=delta_theta ) #create an incremental movement
-		Self.set_rel_position(np.matmul(Self.rel_position, wM )) #update the new relative position		
+		self.set_rel_position(np.matmul(self.rel_position, wM )) #update the new relative position		
 		
 
-	def kinematic_move( Self, vel_r, vel_l ): #assume bugbot with two wheels on each side of it.
+	def kinematic_move( self, vel_r, vel_l ): #assume bugbot with two wheels on each side of it.
 										      #taken from GRIT robotics course
-		wheel_radius = Self.size * 0.5 #wheel radius is some proportion of the radius of the body
-		wheel_separation = Self.size * 2 #wheels are separated by the size of the bug
+		wheel_radius = self.size * 0.5 #wheel radius is some proportion of the radius of the body
+		wheel_separation = self.size * 2 #wheels are separated by the size of the bug
 		delta_theta = ( wheel_radius/wheel_separation)*(vel_r - vel_l )
 		temp_vect = (wheel_radius/2)*(vel_r + vel_l)
 		delta_x = temp_vect * np.cos( delta_theta )
@@ -573,43 +556,43 @@ class Bug ( BWObject ):
 
 
 class Herbivore( Bug ): 
-	def __init__ (Self, starting_pos, name = "Herb" ):
+	def __init__ (self, starting_pos, name = "Herb" ):
 		super().__init__( starting_pos, name )
-		Self.color = Color.GREEN
-		Self.type = BWOType.HERB
+		self.color = Color.GREEN
+		self.type = BWOType.HERB
 
 class Omnivore( Bug ): #Orange
-	def __init__ (Self, starting_pos, name = "OMN" ):
+	def __init__ (self, starting_pos, name = "OMN" ):
 		super().__init__( starting_pos, name )
-		Self.color = Color.ORANGE
-		Self.type = BWOType.OMN
+		self.color = Color.ORANGE
+		self.type = BWOType.OMN
 
 class Carnivore( Bug ): #Red
-	def __init__ (Self, starting_pos, name = "CARN" ):
+	def __init__ (self, starting_pos, name = "CARN" ):
 		super().__init__( starting_pos, name )
-		Self.color = Color.RED
-		Self.type = BWOType.CARN
+		self.color = Color.RED
+		self.type = BWOType.CARN
 
 class Obstacle( BWObject ): #yellow
-	def __init__ (Self, starting_pos, name = "OBST" ):
-		super().__init__( starting_pos, name )
-		Self.color = Color.YELLOW
-		Self.type = BWOType.OBST
-		Self.size = 7
+	def __init__ (self, starting_pos, name = "OBST" ):
+		super().__init__( None, starting_pos, name )
+		self.color = Color.YELLOW
+		self.type = BWOType.OBST
+		self.size = 7
 
 class Meat( BWObject ): #brown
-	def __init__ (Self, starting_pos, name = "MEAT" ):
-		super().__init__( starting_pos, name )
-		Self.color = Color.BROWN
-		Self.type = BWOType.MEAT
-		Self.size = 10
+	def __init__ (self, starting_pos, name = "MEAT" ):
+		super().__init__( None, starting_pos, name )
+		self.color = Color.BROWN
+		self.type = BWOType.MEAT
+		self.size = 10
 
 class Plant( BWObject ): #dark green
-	def __init__ (Self, starting_pos, name = "PLANT" ):
-		super().__init__( starting_pos, name )
-		Self.color = Color.DARK_GREEN
-		Self.type = BWOType.PLANT
-		Self.size = 5
+	def __init__ (self, starting_pos, name = "PLANT" ):
+		super().__init__( None, starting_pos, name )
+		self.color = Color.DARK_GREEN
+		self.type = BWOType.PLANT
+		self.size = 5
 
 
 
