@@ -1,44 +1,38 @@
 import pygame 
 import os 
+import pygame
+import world
+import display
+import config
+from helpers import Color
+from pygame.locals import K_SPACE, K_LEFT, K_RIGHT
+from pygamehelper import PygameHelper
+
 os.environ['SDL_VIDEO_CENTERED'] = '1'
 
-from pygame.locals import *
 
-#Helper class that controls interaction loop in Pygame
-from pygamehelper import *
-
-#Get the definition of the World
-from BugWorld import *
-
-#main control loop of the pygame
-class BugSim( PygameHelper ):
+class BugSim():
 	
-	def __init__(self):
-		self.BW = BugWorld() #instantiate the world and its objects
-		super(BugSim,self).__init__( (self.BW.BOUNDARY_WIDTH, self.BW.BOUNDARY_HEIGHT), Color.WHITE )
+	def __init__(self, DisplayCls):
+		self.world = world.BugWorld() #instantiate the world and its objects
+		self.display = DisplayCls((config.BOUNDARY_WIDTH, config.BOUNDARY_HEIGHT), Color.WHITE)
+		self.display.register(display.DisplayEvents.UPDATE, self, self.update)
 
-	def update(self): #update everything in the world
-		self.BW.update()
+	def run(self):
+		self.display.run()
 
+	def update(self, source, screen):
+		# Update
+		self.world.update()
 
-	def draw( self ): #draw the resulting world
-		self.screen.fill(Color.WHITE)
-		self.BW.draw(self.screen)
+		# Draw
+		screen.fill(Color.WHITE)
+		self.world.draw(screen)
 		pygame.display.update()
 
-	def keyDown(self, key):
-		
-		if key == K_SPACE:
-			pass
-		elif key == K_LEFT:
-			pass
-		elif key == K_RIGHT:
-			pass
-		else:
-			print(key)
 
 		
 if __name__ == "__main__":
-	g = BugSim()
-	g.mainLoop(60)
+	g = BugSim(PygameHelper)
+	g.run()
     
